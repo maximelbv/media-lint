@@ -1,0 +1,15 @@
+{
+  "type": "module",
+  "name": "media-lint-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --filter ./packages/** run dev",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.0",
+    "typescript": "^5.5.4"
+  }
+}
