@@ -7,13 +7,15 @@
   "type": "module",
   "scripts": {
     "build": "tsup src/bin.ts --dts --format cjs,esm",
-    "dev": "tsup src/bin.ts --watch --dts --format cjs,esm"
+    "dev": "tsup src/bin.ts --watch --dts --format cjs,esm",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "media-lint-core": "workspace:*",
     "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "tsup": "^8.1.0",
     "typescript": "^5.5.4"
   }
