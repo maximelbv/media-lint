@@ -1,5 +1,5 @@
 import { listFiles } from "../scan/globber.js";
-import { detectType, type MediaType } from "../utils/filetype.js";
+import { detectType } from "../utils/filetype.js";
 import { readImageMeta, readAVMeta } from "../scan/metadata.js";
 import { parseBytes, parseSeconds } from "../utils/units.js";
 import type { LintConfig } from "../config/schema.js";
@@ -7,12 +7,13 @@ import { applyGeneralRules } from "./general.js";
 import { applyImageRules } from "./image.js";
 import { applyVideoRules } from "./video.js";
 import { applyAudioRules } from "./audio.js";
+import { DiagnosticSeverity } from "../types.js";
 
 export type Diagnostic = {
   file: string;
   rule: string;
   message: string;
-  severity: "error" | "warn";
+  severity: DiagnosticSeverity;
 };
 
 export type LintResult = { diagnostics: Diagnostic[] };

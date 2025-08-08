@@ -9,6 +9,7 @@ export function defineConfig(cfg: LintConfig): LintConfig {
 
 export async function loadConfig(cwd = process.cwd()): Promise<LintConfig> {
   const candidates = [
+    // TODO: constants
     "media.config.js",
     "media.config.mjs",
     "media.config.cjs",
@@ -25,6 +26,7 @@ export async function loadConfig(cwd = process.cwd()): Promise<LintConfig> {
   }
 
   if (!foundPath) {
+    // TODO: constants ?
     throw new Error(
       `media-lint: No configuration file found in "${cwd}". Expected one of: ${candidates.join(
         ", "
@@ -36,6 +38,7 @@ export async function loadConfig(cwd = process.cwd()): Promise<LintConfig> {
   try {
     mod = await import(pathToFileURL(foundPath).href);
   } catch (err: any) {
+    // TODO: constants ?
     throw new Error(
       `media-lint: Failed to load configuration file "${foundPath}".\n` +
         `Reason: ${err?.message || err}`
@@ -49,6 +52,7 @@ export async function loadConfig(cwd = process.cwd()): Promise<LintConfig> {
     const issues = parsed.error.errors
       .map((e) => `${e.path.join(".")}: ${e.message}`)
       .join("\n");
+    // TODO: constants ?
     throw new Error(
       `media-lint: Configuration validation failed for "${foundPath}".\n` +
         `Issues:\n${issues}`

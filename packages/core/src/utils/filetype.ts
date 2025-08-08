@@ -1,6 +1,5 @@
 import path from "node:path";
-
-export type MediaType = "image" | "video" | "audio" | "svg" | "other";
+import { MediaType } from "../types";
 
 export async function detectType(
   file: string

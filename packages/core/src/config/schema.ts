@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { OUTPUT_FORMATS, REPORT_FORMATS } from "../formats/registry";
 
-const bytes = z.union([z.number().nonnegative(), z.string().min(1)]); // "1.5MB"
-const seconds = z.union([z.number().nonnegative(), z.string().min(1)]); // "60s"
+const bytes = z.union([z.number().nonnegative(), z.string().min(1)]);
+const seconds = z.union([z.number().nonnegative(), z.string().min(1)]);
 
 export const ConfigSchema = z.object({
   include: z.array(z.string()).min(1),
@@ -45,17 +46,23 @@ export const ConfigSchema = z.object({
     .array(
       z.object({
         include: z.string().optional(),
-        name: z.any().optional(), // regex
+        name: z.any().optional(),
         rules: z.record(z.any()),
       })
     )
     .default([]),
+  output: z
+    .object({
+      format: z.enum(OUTPUT_FORMATS).default(OUTPUT_FORMATS[0]),
+    })
+    .default({ format: OUTPUT_FORMATS[0] }),
   report: z
     .object({
-      format: z.array(z.enum(["table", "json"])).default(["table"]),
-      outFile: z.string().optional(),
+      enabled: z.boolean().default(false),
+      path: z.string().optional(),
+      format: z.enum(REPORT_FORMATS).default(REPORT_FORMATS[0]),
     })
-    .default({ format: ["table"] }),
+    .default({ enabled: false, format: REPORT_FORMATS[0] }),
   ignoreFiles: z.array(z.string()).default([]),
 });
 

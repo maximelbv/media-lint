@@ -10,11 +10,15 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
+    },
+    "./formats": {
+      "import": "./dist/formats/registry.js",
+      "types": "./dist/formats/registry.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm",
-    "dev": "tsup src/index.ts --watch --dts --format cjs,esm",
+    "build": "tsup",
+    "dev": "tsup --watch --sourcemap",
     "clean": "rm -rf dist"
   },
   "dependencies": {
