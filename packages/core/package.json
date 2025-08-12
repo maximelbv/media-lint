@@ -13,7 +13,8 @@
     },
     "./formats": {
       "import": "./dist/formats/registry.js",
-      "types": "./dist/formats/registry.d.ts"
+      "types": "./dist/formats/registry.d.ts",
+      "require": "./dist/formats/registry.cjs"
     }
   },
   "scripts": {
