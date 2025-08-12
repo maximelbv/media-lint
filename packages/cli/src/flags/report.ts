@@ -1,22 +1,34 @@
-import { reportFormats, REPORT_FORMATS } from "media-lint-core/formats";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { REPORT_FORMATS } from "media-lint-core/formats";
+import type { LintConfig } from "media-lint-core";
+import {
+  DEFAULT_REPORT_PATH,
+  type ReportFlagOpts,
+  type ReportFormat,
+} from "../constants/flags.js";
+import { REPORT_MESSAGES } from "../constants/cli.js";
 
-export type ReportOpts = { reportFormat?: string; reportPath?: string };
-
-export async function handleReportFlag(
-  res: any,
-  opts: ReportOpts,
-  cfg: any
+export async function handleReportFlag<T>(
+  res: T,
+  opts: ReportFlagOpts,
+  cfg: LintConfig,
+  serializerMap: Record<ReportFormat, (result: T) => string>
 ): Promise<void> {
-  const wanted = (opts.reportFormat ??
-    cfg.report?.format ??
-    REPORT_FORMATS[0]) as (typeof REPORT_FORMATS)[number];
-  const serializer = reportFormats[wanted];
-  if (!serializer) throw new Error(`Unknown report format: ${wanted}`);
+  const rawFormat =
+    opts.reportFormat ?? cfg.report?.format ?? REPORT_FORMATS[0];
+
+  if (!REPORT_FORMATS.includes(rawFormat as ReportFormat)) {
+    throw new Error(REPORT_MESSAGES.UNKNOWN_FORMAT(rawFormat));
+  }
+  const format = rawFormat as ReportFormat;
+
+  const serializer = serializerMap[format];
   const outPath =
-    opts.reportPath || cfg.report?.path || `reports/media-lint.${wanted}`;
+    opts.reportPath || cfg.report?.path || `${DEFAULT_REPORT_PATH}.${format}`;
+
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, serializer(res));
-  console.log(`Report saved to: ${outPath}`);
+
+  console.log(REPORT_MESSAGES.SAVED(outPath));
 }

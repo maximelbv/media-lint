@@ -1,25 +1,24 @@
 import { loadConfig, lint } from "media-lint-core";
-import { outputFormats, OUTPUT_FORMATS } from "media-lint-core/formats";
-import { handleReportFlag } from "../flags/report";
+import { outputFormats, reportFormats } from "media-lint-core/formats";
+import { handleReportFlag } from "../flags/report.js";
+import type { RunAudit } from "../constants/audit.js";
+import { handleOutput } from "../utils/output.js";
 
-export type AuditOpts = { reportFormat?: string; reportPath?: string };
-
-export async function runAudit(opts: AuditOpts = {}): Promise<number> {
+export async function runAudit(
+  ...args: Parameters<RunAudit>
+): ReturnType<RunAudit> {
+  const [opts = {}] = args;
   const cfg = await loadConfig();
   const res = await lint(cfg);
 
-  const outputFmt = cfg.output?.format ?? OUTPUT_FORMATS[0];
-  if (outputFormats[outputFmt]) {
-    outputFormats[outputFmt](res);
-  } else if (res.diagnostics.length === 0) {
-    console.log("No issues found.");
-  }
+  handleOutput(res, cfg, outputFormats);
 
   const wantsReport =
     !!(opts.reportFormat || opts.reportPath) || cfg.report?.enabled === true;
+
   if (wantsReport) {
-    await handleReportFlag(res, opts, cfg);
+    await handleReportFlag(res, opts, cfg, reportFormats);
   }
 
-  return res.diagnostics.some((d) => d.severity === "error") ? 1 : 0;
+  return res.diagnostics?.some((d) => d.severity === "error") ? 1 : 0;
 }
