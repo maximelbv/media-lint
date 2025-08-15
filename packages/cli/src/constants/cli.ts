@@ -16,3 +16,8 @@ export const REPORT_MESSAGES = {
   UNKNOWN_FORMAT: (format: string) => `Unknown report format: ${format}`,
   SAVED: (path: string) => `Report saved to: ${path}`,
 } as const;
+
+export const FILE_MESSAGES = {
+  NOT_FOUND_UPWARDS: (filename: string, startDir: string) =>
+    `${filename} not found (starting from: ${startDir})`,
+} as const;

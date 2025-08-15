@@ -1,62 +1,92 @@
-import { ConfigSchema, type LintConfig } from "./schema.js";
-import path from "node:path";
-import fs from "node:fs";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { pathToFileURL } from "node:url";
+import { ConfigSchema, type LintConfig } from "./schema.js";
 
-export function defineConfig(cfg: LintConfig): LintConfig {
-  return cfg; // helper for intellisense
+type Maybe<T> = T | undefined;
+
+const DEFAULT_CANDIDATES = [
+  "media-config.json",
+  "media-config.js",
+  "media-config.mjs",
+  "media.config.json",
+  "media.config.js",
+  "media.config.mjs",
+];
+
+async function fileExists(p: string): Promise<boolean> {
+  try {
+    await fs.stat(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export async function loadConfig(cwd = process.cwd()): Promise<LintConfig> {
-  const candidates = [
-    // TODO: constants
-    "media.config.js",
-    "media.config.mjs",
-    "media.config.cjs",
-    "media.config.json",
-  ];
+async function findDefaultConfig(cwd: string): Promise<Maybe<string>> {
+  for (const name of DEFAULT_CANDIDATES) {
+    const full = path.resolve(cwd, name);
+    if (await fileExists(full)) return full;
+  }
+  return undefined;
+}
 
-  let foundPath: string | undefined;
-  for (const f of candidates) {
-    const p = path.resolve(cwd, f);
-    if (fs.existsSync(p)) {
-      foundPath = p;
-      break;
+async function loadJsonConfig(absPath: string): Promise<unknown> {
+  const raw = await fs.readFile(absPath, "utf8");
+  return JSON.parse(raw);
+}
+
+async function loadJsConfig(absPath: string): Promise<unknown> {
+  const url = pathToFileURL(absPath).href;
+  const mod = await import(url);
+  return mod?.default ?? mod;
+}
+
+function isJsonExt(p: string) {
+  return /\.json$/i.test(p);
+}
+function isJsExt(p: string) {
+  return /\.(mjs|js)$/i.test(p);
+}
+
+export async function loadConfig(cliPath?: string): Promise<LintConfig> {
+  const cwd = process.cwd();
+
+  let resolved: Maybe<string>;
+  if (cliPath) {
+    resolved = path.isAbsolute(cliPath) ? cliPath : path.resolve(cwd, cliPath);
+    if (!(await fileExists(resolved))) {
+      throw new Error(`Configuration file not found at: ${resolved}`);
     }
+  } else {
+    resolved = await findDefaultConfig(cwd);
   }
 
-  if (!foundPath) {
-    // TODO: constants ?
+  if (!resolved) {
     throw new Error(
-      `media-lint: No configuration file found in "${cwd}". Expected one of: ${candidates.join(
+      `No configuration file found. Looked for: ${DEFAULT_CANDIDATES.join(
         ", "
       )}`
     );
   }
 
-  let mod: any;
-  try {
-    mod = await import(pathToFileURL(foundPath).href);
-  } catch (err: any) {
-    // TODO: constants ?
+  let rawConfig: unknown;
+  if (isJsonExt(resolved)) {
+    rawConfig = await loadJsonConfig(resolved);
+  } else if (isJsExt(resolved)) {
+    rawConfig = await loadJsConfig(resolved);
+  } else {
     throw new Error(
-      `media-lint: Failed to load configuration file "${foundPath}".\n` +
-        `Reason: ${err?.message || err}`
+      `Unsupported config extension for: ${resolved}. Use .json, .js, or .mjs`
     );
   }
 
-  const cfg = mod?.default ?? mod;
-  const parsed = ConfigSchema.safeParse(cfg);
-
+  const parsed = ConfigSchema.safeParse(rawConfig);
   if (!parsed.success) {
-    const issues = parsed.error.errors
-      .map((e) => `${e.path.join(".")}: ${e.message}`)
-      .join("\n");
-    // TODO: constants ?
-    throw new Error(
-      `media-lint: Configuration validation failed for "${foundPath}".\n` +
-        `Issues:\n${issues}`
-    );
+    const issues = parsed.error.issues
+      .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+      .join("\n - ");
+    throw new Error(`Invalid configuration:\n - ${issues}`);
   }
 
   return parsed.data;
